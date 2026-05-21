@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>手机端｜物理实验竞赛命题5 · 熵增原理｜我是奶龙对不队</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<style>
+    * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+        color: rgba(230, 230, 230, 0.88);
+    }
+
+    #simCanvas {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: 100vh;
+        background: #000;
+        display: block;
+    }
+
+    #statCanvas {
+        position: fixed;
+        right: 3.5vw;
+        top: 3.5vw;
+        width: min(38vw, 360px);
+        height: min(30vw, 260px);
+        border-radius: 16px;
+        background: rgba(5, 8, 12, 0.55);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(180, 220, 255, 0.16);
+        box-shadow: 0 0 28px rgba(0, 180, 255, 0.08);
+    }
+
+    #topInfo {
+        position: fixed;
+        left: 18px;
+        top: 16px;
+        font-size: 13px;
+        line-height: 1.55;
+        color: rgba(220, 220, 220, 0.74);
+        letter-spacing: 0.2px;
+        text-shadow: 0 0 12px rgba(0,0,0,0.8);
+        user-select: none;
+        pointer-events: none;
+    }
+
+    #controlPanel {
+        position: fixed;
+        left: 50%;
+        bottom: 14px;
+        transform: translateX(-50%);
+        width: min(94vw, 680px);
+        padding: 14px 14px 12px;
+        background: rgba(8, 10, 14, 0.74);
+        border: 1px solid rgba(160, 210, 255, 0.16);
+        border-radius: 22px;
+        backdrop-filter: blur(14px);
+        box-shadow: 0 0 40px rgba(0, 180, 255, 0.10);
+    }
+
+    .panelTitle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        color: rgba(235, 235, 235, 0.86);
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .statusDot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #00d5ff;
+        box-shadow: 0 0 12px rgba(0, 213, 255, 0.9);
+        display: inline-block;
+        margin-right: 8px;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+    }
+
+    .item {
+        background: rgba(255,255,255,0.035);
+        border: 1px solid rgba(255,255,255,0.075);
+        border-radius: 14px;
+        padding: 8px 9px;
+    }
+
+    .item label {
+        display: block;
+        font-size: 11px;
+        color: rgba(210, 210, 210, 0.62);
+        margin-bottom: 5px;
+    }
+
+    .item input {
+        width: 100%;
+        background: rgba(255,255,255,0.08);
+        color: rgba(245,245,245,0.92);
+        border: 1px solid rgba(255,255,255,0.12);
+        outline: none;
+        border-radius: 10px;
+        padding: 6px 7px;
+        font-size: 13px;
+    }
+
+    .buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    button {
+        flex: 1;
+        border: none;
+        outline: none;
+        border-radius: 14px;
+        padding: 10px 8px;
+        color: rgba(245,245,245,0.93);
+        font-size: 14px;
+        background: linear-gradient(135deg, rgba(0, 180, 255, 0.28), rgba(255, 255, 255, 0.06));
+        border: 1px solid rgba(0, 210, 255, 0.18);
+        box-shadow: inset 0 0 18px rgba(255,255,255,0.03);
+    }
+
+    button:active {
+        transform: scale(0.985);
+    }
+
+    .ghost {
+        background: rgba(255,255,255,0.055);
+        border: 1px solid rgba(255,255,255,0.10);
+    }
+
+    #hint {
+        margin-top: 8px;
+        text-align: center;
+        font-size: 11px;
+        color: rgba(220,220,220,0.42);
+    }
+
+    @media (max-width: 720px) {
+        #statCanvas {
+            width: 45vw;
+            height: 34vw;
+            right: 10px;
+            top: 10px;
+            border-radius: 14px;
+        }
+
+        #topInfo {
+            left: 12px;
+            top: 12px;
+            font-size: 11px;
+            max-width: 48vw;
+        }
+
+        #controlPanel {
+            bottom: 10px;
+            width: calc(100vw - 18px);
+            padding: 12px;
+            border-radius: 20px;
+        }
+
+        .grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .item {
+            padding: 7px 8px;
+        }
+
+        .item label {
+            font-size: 10px;
+        }
+
+        .item input {
+            font-size: 12px;
+            padding: 6px;
+        }
+
+        button {
+            padding: 9px 6px;
+            font-size: 13px;
+        }
+    }
+
+
+    /* ===== Competition Presentation Polish ===== */
+    #simCanvas {
+        z-index: 0;
+    }
+
+    #screenOverlay {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        background:
+            radial-gradient(circle at 50% 42%, rgba(0, 220, 255, 0.075), transparent 34%),
+            radial-gradient(circle at 18% 72%, rgba(255, 172, 70, 0.065), transparent 28%),
+            linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.020) 1px, transparent 1px);
+        background-size: auto, auto, 42px 42px, 42px 42px;
+        mix-blend-mode: screen;
+        opacity: 0.70;
+    }
+
+    #screenOverlay::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            linear-gradient(90deg, rgba(0,0,0,0.68), transparent 22%, transparent 74%, rgba(0,0,0,0.60)),
+            linear-gradient(180deg, rgba(0,0,0,0.20), transparent 52%, rgba(0,0,0,0.36));
+    }
+
+    #sceneTitle {
+        position: fixed;
+        left: 50%;
+        top: 18px;
+        transform: translateX(-50%);
+        z-index: 5;
+        text-align: center;
+        pointer-events: none;
+        user-select: none;
+        text-shadow: 0 0 26px rgba(0, 213, 255, 0.32), 0 0 16px rgba(0,0,0,0.90);
+    }
+
+    #sceneTitle .cn {
+        font-size: clamp(18px, 2.15vw, 34px);
+        font-weight: 750;
+        letter-spacing: 0.12em;
+        color: rgba(252, 254, 255, 0.96);
+        white-space: nowrap;
+    }
+
+    #sceneTitle .en {
+        margin-top: 4px;
+        font-size: clamp(9px, 0.92vw, 13px);
+        letter-spacing: 0.32em;
+        color: rgba(157, 230, 255, 0.70);
+        text-transform: uppercase;
+    }
+
+    #teamBadge {
+        position: fixed;
+        right: 26px;
+        top: 20px;
+        width: min(34vw, 380px);
+        z-index: 6;
+        padding: 14px 16px 13px;
+        border-radius: 22px;
+        color: rgba(246, 249, 252, 0.95);
+        background:
+            linear-gradient(135deg, rgba(6, 15, 24, 0.86), rgba(7, 9, 13, 0.60)),
+            radial-gradient(circle at 85% 10%, rgba(0, 213, 255, 0.24), transparent 36%),
+            radial-gradient(circle at 8% 100%, rgba(255, 180, 90, 0.16), transparent 38%);
+        border: 1px solid rgba(170, 224, 255, 0.22);
+        box-shadow:
+            0 0 34px rgba(0, 213, 255, 0.13),
+            inset 0 0 28px rgba(255,255,255,0.035);
+        backdrop-filter: blur(18px);
+        overflow: hidden;
+    }
+
+    #teamBadge::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.12) 42%, transparent 58%);
+        transform: translateX(-120%);
+        animation: badgeSweep 5.5s ease-in-out infinite;
+        pointer-events: none;
+    }
+
+    @keyframes badgeSweep {
+        0%, 58% { transform: translateX(-120%); }
+        78%, 100% { transform: translateX(120%); }
+    }
+
+    .badgeKicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        color: rgba(142, 232, 255, 0.82);
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+    }
+
+    .badgeKicker::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #00d5ff;
+        box-shadow: 0 0 16px rgba(0, 213, 255, 0.95);
+    }
+
+    .badgeTeam {
+        margin-top: 6px;
+        font-size: clamp(18px, 1.8vw, 27px);
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        line-height: 1.15;
+        color: rgba(255,255,255,0.98);
+    }
+
+    .badgeTopic {
+        margin-top: 7px;
+        font-size: clamp(12px, 1.05vw, 15px);
+        color: rgba(236, 239, 244, 0.72);
+        letter-spacing: 0.06em;
+    }
+
+    .badgeLine {
+        margin-top: 10px;
+        height: 1px;
+        background: linear-gradient(90deg, rgba(0,213,255,0.0), rgba(0,213,255,0.64), rgba(255,190,105,0.46), rgba(255,255,255,0.0));
+    }
+
+    #statCanvas {
+        top: 128px;
+        right: 26px;
+        z-index: 4;
+        width: min(34vw, 380px);
+        height: min(25vw, 250px);
+        background: rgba(3, 6, 10, 0.66);
+        border: 1px solid rgba(170, 224, 255, 0.20);
+        box-shadow: 0 0 36px rgba(0, 213, 255, 0.12), inset 0 0 24px rgba(255,255,255,0.025);
+    }
+
+    #topInfo {
+        z-index: 5;
+        padding: 12px 14px;
+        border-radius: 18px;
+        background: rgba(5, 8, 12, 0.42);
+        border: 1px solid rgba(255,255,255,0.08);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 0 28px rgba(0,0,0,0.22);
+    }
+
+    #topInfo .miniTitle {
+        font-size: 12px;
+        color: rgba(142, 232, 255, 0.78);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+
+    #controlPanel {
+        z-index: 5;
+        background:
+            linear-gradient(135deg, rgba(6, 12, 20, 0.82), rgba(5, 6, 10, 0.70)),
+            radial-gradient(circle at 8% 0%, rgba(0,213,255,0.18), transparent 30%),
+            radial-gradient(circle at 92% 100%, rgba(255,181,90,0.13), transparent 36%);
+        border: 1px solid rgba(178, 228, 255, 0.22);
+        box-shadow:
+            0 20px 60px rgba(0,0,0,0.44),
+            0 0 48px rgba(0, 213, 255, 0.12),
+            inset 0 0 32px rgba(255,255,255,0.035);
+    }
+
+    .panelTitle {
+        letter-spacing: 0.05em;
+    }
+
+    .item {
+        background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.024));
+        border: 1px solid rgba(188, 229, 255, 0.12);
+        box-shadow: inset 0 0 20px rgba(255,255,255,0.018);
+    }
+
+    .item input {
+        background: rgba(0,0,0,0.24);
+        border: 1px solid rgba(156, 226, 255, 0.15);
+    }
+
+    button {
+        cursor: pointer;
+        background:
+            linear-gradient(135deg, rgba(0, 213, 255, 0.33), rgba(255, 185, 88, 0.12)),
+            rgba(255,255,255,0.035);
+        transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    button:hover {
+        filter: brightness(1.12);
+        box-shadow: 0 0 20px rgba(0, 213, 255, 0.13);
+    }
+
+    .ghost {
+        background: rgba(255,255,255,0.055);
+    }
+
+    #hint {
+        color: rgba(220, 230, 238, 0.48);
+    }
+
+    @media (max-width: 960px) {
+        #sceneTitle {
+            left: 16px;
+            top: 84px;
+            transform: none;
+            text-align: left;
+            max-width: 56vw;
+        }
+        #sceneTitle .cn {
+            white-space: normal;
+            letter-spacing: 0.08em;
+        }
+        #teamBadge {
+            right: 12px;
+            top: 10px;
+            width: min(52vw, 330px);
+            padding: 11px 12px 10px;
+            border-radius: 18px;
+        }
+        #statCanvas {
+            right: 12px;
+            top: 116px;
+            width: 46vw;
+            height: 33vw;
+            border-radius: 15px;
+        }
+    }
+
+    @media (max-width: 720px) {
+        #screenOverlay {
+            opacity: 0.55;
+            background-size: auto, auto, 34px 34px, 34px 34px;
+        }
+        #topInfo {
+            left: 10px;
+            top: 10px;
+            max-width: 43vw;
+            padding: 8px 9px;
+            border-radius: 14px;
+        }
+        #topInfo .miniTitle {
+            font-size: 9px;
+        }
+        #sceneTitle {
+            display: none;
+        }
+        #teamBadge {
+            right: 10px;
+            top: 10px;
+            width: 47vw;
+            padding: 9px 10px;
+        }
+        .badgeKicker {
+            font-size: 8px;
+        }
+        .badgeTeam {
+            font-size: 14px;
+            letter-spacing: 0.04em;
+        }
+        .badgeTopic {
+            font-size: 10px;
+            line-height: 1.35;
+        }
+        .badgeLine {
+            margin-top: 7px;
+        }
+        #statCanvas {
+            width: 47vw;
+            height: 35vw;
+            right: 10px;
+            top: 106px;
+            border-radius: 14px;
+        }
+    }
+
+
+
+    /* ===== Mobile-first pure black layout override ===== */
+    html, body, #simCanvas {
+        background: #000 !important;
+    }
+
+    #screenOverlay {
+        display: none !important;
+        background: none !important;
+        opacity: 0 !important;
+    }
+
+    #teamBadge,
+    #topInfo,
+    #controlPanel,
+    #statCanvas {
+        background: rgba(0, 0, 0, 0.78) !important;
+        box-shadow: none !important;
+        backdrop-filter: blur(8px);
+    }
+
+    #teamBadge {
+        border-color: rgba(120, 210, 255, 0.26) !important;
+    }
+
+    #teamBadge::before {
+        display: none !important;
+    }
+
+    #controlPanel {
+        border-color: rgba(120, 210, 255, 0.18) !important;
+    }
+
+    #statCanvas {
+        border-color: rgba(120, 210, 255, 0.18) !important;
+    }
+
+    @media (max-width: 720px) {
+        html, body {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            background: #000 !important;
+        }
+
+        #simCanvas {
+            background: #000 !important;
+        }
+
+        #sceneTitle {
+            display: none !important;
+        }
+
+        #teamBadge {
+            left: 10px !important;
+            right: 10px !important;
+            top: calc(8px + env(safe-area-inset-top)) !important;
+            width: auto !important;
+            padding: 10px 12px 9px !important;
+            border-radius: 16px !important;
+            background: rgba(0, 0, 0, 0.86) !important;
+            border: 1px solid rgba(128, 220, 255, 0.30) !important;
+            z-index: 8 !important;
+        }
+
+        .badgeKicker {
+            font-size: 8px !important;
+            letter-spacing: 0.16em !important;
+            color: rgba(125, 224, 255, 0.72) !important;
+        }
+
+        .badgeKicker::before {
+            width: 6px !important;
+            height: 6px !important;
+            box-shadow: 0 0 10px rgba(0, 213, 255, 0.70) !important;
+        }
+
+        .badgeTeam {
+            margin-top: 4px !important;
+            font-size: 18px !important;
+            line-height: 1.15 !important;
+            letter-spacing: 0.08em !important;
+            color: rgba(255, 255, 255, 0.98) !important;
+        }
+
+        .badgeTopic {
+            margin-top: 5px !important;
+            font-size: 11px !important;
+            line-height: 1.3 !important;
+            color: rgba(230, 235, 240, 0.72) !important;
+            letter-spacing: 0.04em !important;
+        }
+
+        .badgeLine {
+            display: none !important;
+        }
+
+        #topInfo {
+            left: 10px !important;
+            top: calc(88px + env(safe-area-inset-top)) !important;
+            width: calc(48vw - 14px) !important;
+            max-width: none !important;
+            padding: 8px 9px !important;
+            border-radius: 14px !important;
+            background: rgba(0, 0, 0, 0.72) !important;
+            border: 1px solid rgba(255, 255, 255, 0.10) !important;
+            font-size: 10px !important;
+            line-height: 1.42 !important;
+            z-index: 7 !important;
+        }
+
+        #topInfo .miniTitle {
+            font-size: 8px !important;
+            letter-spacing: 0.12em !important;
+            margin-bottom: 3px !important;
+        }
+
+        #statCanvas {
+            right: 10px !important;
+            top: calc(88px + env(safe-area-inset-top)) !important;
+            width: calc(52vw - 14px) !important;
+            height: 122px !important;
+            border-radius: 14px !important;
+            background: rgba(0, 0, 0, 0.72) !important;
+            z-index: 6 !important;
+        }
+
+        #controlPanel {
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            transform: none !important;
+            width: 100vw !important;
+            max-height: min(34vh, 245px) !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) !important;
+            border-radius: 18px 18px 0 0 !important;
+            background: rgba(0, 0, 0, 0.90) !important;
+            border-left: none !important;
+            border-right: none !important;
+            border-bottom: none !important;
+            z-index: 9 !important;
+        }
+
+        .panelTitle {
+            margin-bottom: 7px !important;
+            font-size: 12px !important;
+        }
+
+        .statusDot {
+            width: 7px !important;
+            height: 7px !important;
+            margin-right: 6px !important;
+        }
+
+        .grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 7px !important;
+        }
+
+        .item {
+            padding: 7px 8px !important;
+            border-radius: 12px !important;
+            background: rgba(255, 255, 255, 0.035) !important;
+            border: 1px solid rgba(255, 255, 255, 0.10) !important;
+        }
+
+        .item:nth-child(5) {
+            grid-column: 1 / -1 !important;
+        }
+
+        .item label {
+            font-size: 10px !important;
+            margin-bottom: 4px !important;
+        }
+
+        .item input {
+            height: 30px !important;
+            padding: 5px 7px !important;
+            font-size: 12px !important;
+            border-radius: 9px !important;
+            background: rgba(0, 0, 0, 0.52) !important;
+        }
+
+        .buttons {
+            gap: 7px !important;
+            margin-top: 8px !important;
+        }
+
+        button {
+            min-height: 36px !important;
+            padding: 8px 6px !important;
+            border-radius: 12px !important;
+            font-size: 12px !important;
+            background: rgba(255, 255, 255, 0.065) !important;
+            border: 1px solid rgba(128, 220, 255, 0.18) !important;
+        }
+
+        #hint {
+            display: none !important;
+        }
+    }
+
+    @media (max-width: 720px) and (max-height: 660px) {
+        #teamBadge {
+            padding: 8px 10px 7px !important;
+        }
+        .badgeTeam {
+            font-size: 16px !important;
+        }
+        .badgeTopic {
+            font-size: 10px !important;
+        }
+        #topInfo, #statCanvas {
+            top: calc(78px + env(safe-area-inset-top)) !important;
+        }
+        #statCanvas {
+            height: 110px !important;
+        }
+        #controlPanel {
+            max-height: 32vh !important;
+        }
+    }
+
+    @media (orientation: landscape) and (max-height: 520px) {
+        #teamBadge {
+            left: 10px !important;
+            right: auto !important;
+            top: 8px !important;
+            width: 265px !important;
+            padding: 8px 10px !important;
+        }
+        .badgeTeam {
+            font-size: 15px !important;
+        }
+        .badgeTopic {
+            font-size: 10px !important;
+        }
+        #topInfo {
+            left: 10px !important;
+            top: 80px !important;
+            width: 180px !important;
+        }
+        #statCanvas {
+            right: 10px !important;
+            top: 8px !important;
+            width: 230px !important;
+            height: 145px !important;
+        }
+        #controlPanel {
+            left: 50% !important;
+            right: auto !important;
+            bottom: 8px !important;
+            transform: translateX(-50%) !important;
+            width: min(560px, calc(100vw - 220px)) !important;
+            max-height: 42vh !important;
+            border-radius: 16px !important;
+            border: 1px solid rgba(128, 220, 255, 0.18) !important;
+        }
+        .grid {
+            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        }
+        .item:nth-child(5) {
+            grid-column: auto !important;
+        }
+    }
+
+</style>
+</head>
+
+<body>
+<canvas id="simCanvas"></canvas>
+<div id="screenOverlay"></div>
+<canvas id="statCanvas"></canvas>
+
+<div id="sceneTitle">
+    <div class="cn">物理实验竞赛命题5｜熵增原理</div>
+    <div class="en">Entropy Increase Principle · Particle Frequency Simulation</div>
+</div>
+
+<div id="teamBadge">
+    <div class="badgeKicker">Team</div>
+    <div class="badgeTeam">我是奶龙对不队</div>
+    <div class="badgeTopic">物理实验竞赛命题5 · 熵增原理</div>
+    <div class="badgeLine"></div>
+</div>
+
+<div id="topInfo">
+    <div class="miniTitle">Live Statistics</div>
+    <div id="liveText">Initializing...</div>
+</div>
+
+<div id="controlPanel">
+    <div class="panelTitle">
+        <div><span class="statusDot"></span>熵增粒子系统参数</div>
+        <div id="fpsText">FPS --</div>
+    </div>
+
+    <div class="grid">
+        <div class="item">
+            <label>粒子数 N</label>
+            <input id="NInput" type="number" value="800" min="50" max="3000" step="50">
+        </div>
+
+        <div class="item">
+            <label>速度 speed</label>
+            <input id="speedInput" type="number" value="20" min="1" max="100" step="1">
+        </div>
+
+        <div class="item">
+            <label>时间步长 dt</label>
+            <input id="dtInput" type="number" value="0.08" min="0.005" max="0.5" step="0.005">
+        </div>
+
+        <div class="item">
+            <label>箱体半长 L</label>
+            <input id="cubeInput" type="number" value="10" min="4" max="30" step="1">
+        </div>
+
+        <div class="item">
+            <label>统计长度</label>
+            <input id="historyInput" type="number" value="3000" min="200" max="20000" step="100">
+        </div>
+    </div>
+
+    <div class="buttons">
+        <button id="startBtn">开始 / 暂停</button>
+        <button id="resetBtn" class="ghost">重置</button>
+        <button id="fullBtn" class="ghost">全屏</button>
+    </div>
+
+    <div id="hint">
+        黑箱内粒子由初始偏置逐渐扩散，右上角频次分布用于展示宏观统计趋于稳定的过程。手机端建议 N = 300–1200，展示时可点击全屏。
+    </div>
+</div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   1. 基础对象
+========================================================= */
+
+const simCanvas = document.getElementById("simCanvas");
+const simCtx = simCanvas.getContext("2d");
+
+const statCanvas = document.getElementById("statCanvas");
+const statCtx = statCanvas.getContext("2d");
+
+const liveText = document.getElementById("liveText");
+const fpsText = document.getElementById("fpsText");
+
+const NInput = document.getElementById("NInput");
+const speedInput = document.getElementById("speedInput");
+const dtInput = document.getElementById("dtInput");
+const cubeInput = document.getElementById("cubeInput");
+const historyInput = document.getElementById("historyInput");
+
+const startBtn = document.getElementById("startBtn");
+const resetBtn = document.getElementById("resetBtn");
+const fullBtn = document.getElementById("fullBtn");
+
+let W = 0;
+let Hh = 0;
+let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+let running = true;
+
+let N = 800;
+let speed = 20;
+let dt = 0.08;
+let cubeSize = 10;
+let maxHistory = 3000;
+
+let pos = null;
+let vel = null;
+let history = [];
+let currentLeft = 0;
+let stepCount = 0;
+
+let lastTime = performance.now();
+let fpsSmooth = 60;
+
+/* =========================================================
+   2. 画布适配
+========================================================= */
+
+function resizeCanvas() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    W = window.innerWidth;
+    Hh = window.innerHeight;
+
+    simCanvas.width = Math.floor(W * dpr);
+    simCanvas.height = Math.floor(Hh * dpr);
+    simCanvas.style.width = W + "px";
+    simCanvas.style.height = Hh + "px";
+    simCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const rect = statCanvas.getBoundingClientRect();
+    statCanvas.width = Math.floor(rect.width * dpr);
+    statCanvas.height = Math.floor(rect.height * dpr);
+    statCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+window.addEventListener("resize", resizeCanvas);
+
+/* =========================================================
+   3. 工具函数
+========================================================= */
+
+function randn() {
+    let u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+function clamp(v, a, b) {
+    return Math.max(a, Math.min(b, v));
+}
+
+function readParams() {
+    N = clamp(parseInt(NInput.value || "800", 10), 50, 3000);
+    speed = clamp(parseFloat(speedInput.value || "20"), 1, 100);
+    dt = clamp(parseFloat(dtInput.value || "0.08"), 0.005, 0.5);
+    cubeSize = clamp(parseFloat(cubeInput.value || "10"), 4, 30);
+    maxHistory = clamp(parseInt(historyInput.value || "3000", 10), 200, 20000);
+
+    NInput.value = N;
+    speedInput.value = speed;
+    dtInput.value = dt;
+    cubeInput.value = cubeSize;
+    historyInput.value = maxHistory;
+}
+
+/* =========================================================
+   4. 初始化物理系统
+========================================================= */
+
+function initSimulation() {
+    readParams();
+
+    pos = new Float32Array(N * 3);
+    vel = new Float32Array(N * 3);
+
+    const L = cubeSize;
+    const yz = cubeSize / 2;
+
+    for (let i = 0; i < N; i++) {
+        const k = i * 3;
+
+        // 初始位置：全部偏向左箱
+        pos[k]     = -L * Math.random();
+        pos[k + 1] = yz * (2 * Math.random() - 1);
+        pos[k + 2] = yz * (2 * Math.random() - 1);
+
+        let vx = randn();
+        let vy = randn();
+        let vz = randn();
+        const norm = Math.sqrt(vx * vx + vy * vy + vz * vz) || 1;
+
+        vel[k]     = vx / norm * speed;
+        vel[k + 1] = vy / norm * speed;
+        vel[k + 2] = vz / norm * speed;
+    }
+
+    history = [];
+    currentLeft = N;
+    stepCount = 0;
+}
+
+/* =========================================================
+   5. 物理更新
+========================================================= */
+
+function updatePhysics() {
+    const L = cubeSize;
+    const yz = cubeSize / 2;
+
+    let nLeft = 0;
+
+    for (let i = 0; i < N; i++) {
+        const k = i * 3;
+
+        pos[k]     += vel[k]     * dt;
+        pos[k + 1] += vel[k + 1] * dt;
+        pos[k + 2] += vel[k + 2] * dt;
+
+        if (pos[k] > L) {
+            pos[k] = L - (pos[k] - L);
+            vel[k] = -vel[k];
+        }
+        if (pos[k] < -L) {
+            pos[k] = -L - (pos[k] + L);
+            vel[k] = -vel[k];
+        }
+
+        if (pos[k + 1] > yz) {
+            pos[k + 1] = yz - (pos[k + 1] - yz);
+            vel[k + 1] = -vel[k + 1];
+        }
+        if (pos[k + 1] < -yz) {
+            pos[k + 1] = -yz - (pos[k + 1] + yz);
+            vel[k + 1] = -vel[k + 1];
+        }
+
+        if (pos[k + 2] > yz) {
+            pos[k + 2] = yz - (pos[k + 2] - yz);
+            vel[k + 2] = -vel[k + 2];
+        }
+        if (pos[k + 2] < -yz) {
+            pos[k + 2] = -yz - (pos[k + 2] + yz);
+            vel[k + 2] = -vel[k + 2];
+        }
+
+        if (pos[k] < 0) nLeft++;
+    }
+
+    currentLeft = nLeft;
+    history.push(nLeft);
+
+    if (history.length > maxHistory) {
+        history.splice(0, history.length - maxHistory);
+    }
+
+    stepCount++;
+}
+
+/* =========================================================
+   6. 3D 投影与绘图
+========================================================= */
+
+function project3D(x, y, z) {
+    // 为了手机端轻量，不引入 three.js，这里用手写透视投影
+    const yaw = 0.38;
+    const pitch = 0.25;
+
+    const cy = Math.cos(yaw);
+    const sy = Math.sin(yaw);
+    const cp = Math.cos(pitch);
+    const sp = Math.sin(pitch);
+
+    // yaw: 绕 z 轴
+    let x1 = x * cy - y * sy;
+    let y1 = x * sy + y * cy;
+    let z1 = z;
+
+    // pitch: 让箱体有轻微俯视感
+    let y2 = y1 * cp - z1 * sp;
+    let z2 = y1 * sp + z1 * cp;
+
+    const isMobileView = W <= 720;
+    const baseScale = Math.min(W, Hh) / (cubeSize * (isMobileView ? 3.05 : 3.2));
+    const focal = 50;
+    const perspective = focal / (focal + y2);
+
+    // 手机竖屏时，把箱体放在信息区和底部控制区之间，避免被遮挡
+    const centerY = isMobileView ? Hh * 0.47 : Hh * 0.49;
+    const sx = W * 0.50 + x1 * baseScale * perspective;
+    const sy2 = centerY - z2 * baseScale * perspective;
+
+    return {
+        x: sx,
+        y: sy2,
+        depth: y2,
+        scale: perspective
+    };
+}
+
+function drawLine3D(a, b, color, width, alpha) {
+    const pa = project3D(a[0], a[1], a[2]);
+    const pb = project3D(b[0], b[1], b[2]);
+
+    simCtx.save();
+    simCtx.globalAlpha = alpha;
+    simCtx.strokeStyle = color;
+    simCtx.lineWidth = width;
+    simCtx.beginPath();
+    simCtx.moveTo(pa.x, pa.y);
+    simCtx.lineTo(pb.x, pb.y);
+    simCtx.stroke();
+    simCtx.restore();
+}
+
+function drawPoly3D(points, fill, stroke, alphaFill, alphaStroke) {
+    if (points.length < 3) return;
+
+    simCtx.save();
+
+    const p0 = project3D(points[0][0], points[0][1], points[0][2]);
+    simCtx.beginPath();
+    simCtx.moveTo(p0.x, p0.y);
+
+    for (let i = 1; i < points.length; i++) {
+        const p = project3D(points[i][0], points[i][1], points[i][2]);
+        simCtx.lineTo(p.x, p.y);
+    }
+
+    simCtx.closePath();
+
+    if (fill) {
+        simCtx.globalAlpha = alphaFill;
+        simCtx.fillStyle = fill;
+        simCtx.fill();
+    }
+
+    if (stroke) {
+        simCtx.globalAlpha = alphaStroke;
+        simCtx.strokeStyle = stroke;
+        simCtx.lineWidth = 1;
+        simCtx.stroke();
+    }
+
+    simCtx.restore();
+}
+
+function drawBackgroundGlow() {
+    // 纯黑背景：手机展示时更干净，也更像正式比赛演示界面
+    simCtx.fillStyle = "#000";
+    simCtx.fillRect(0, 0, W, Hh);
+}
+
+function drawBox() {
+    const L = cubeSize;
+    const h = cubeSize / 2;
+
+    const v = [
+        [-L, -h, -h], [ L, -h, -h], [ L,  h, -h], [-L,  h, -h],
+        [-L, -h,  h], [ L, -h,  h], [ L,  h,  h], [-L,  h,  h]
+    ];
+
+    // 暗色箱体面
+    drawPoly3D([v[0], v[1], v[2], v[3]], "rgba(40,40,42,1)", null, 0.55, 0);
+    drawPoly3D([v[0], v[4], v[5], v[1]], "rgba(32,32,34,1)", null, 0.50, 0);
+    drawPoly3D([v[3], v[2], v[6], v[7]], "rgba(35,35,38,1)", null, 0.46, 0);
+
+    // 顶部玻璃感
+    drawPoly3D([v[4], v[5], v[6], v[7]], "rgba(160,190,220,1)", "rgba(150,200,255,1)", 0.045, 0.22);
+
+    // 边框
+    const edges = [
+        [0,1], [1,2], [2,3], [3,0],
+        [4,5], [5,6], [6,7], [7,4],
+        [0,4], [1,5], [2,6], [3,7]
+    ];
+
+    for (const e of edges) {
+        drawLine3D(v[e[0]], v[e[1]], "rgba(150,170,190,0.65)", 1.0, 0.45);
+    }
+
+    // 中间分隔面 x = 0
+    const d0 = [0, -h, -h];
+    const d1 = [0,  h, -h];
+    const d2 = [0,  h,  h];
+    const d3 = [0, -h,  h];
+
+    drawPoly3D([d0, d1, d2, d3], "rgba(0,210,255,1)", "rgba(0,220,255,1)", 0.035, 0.70);
+    drawLine3D(d0, d1, "rgba(0,220,255,1)", 2.0, 0.85);
+    drawLine3D(d1, d2, "rgba(0,220,255,1)", 2.0, 0.85);
+    drawLine3D(d2, d3, "rgba(0,220,255,1)", 2.0, 0.85);
+    drawLine3D(d3, d0, "rgba(0,220,255,1)", 2.0, 0.85);
+}
+
+function drawParticles() {
+    // 左侧偏暖、右侧偏冷，模拟从有序偏置走向混合均匀的视觉过程
+    for (let i = 0; i < N; i++) {
+        const k = i * 3;
+        const p = project3D(pos[k], pos[k + 1], pos[k + 2]);
+        const isLeft = pos[k] < 0;
+
+        const rHalo = 4.6 * p.scale;
+        const rCore = 1.65 * p.scale;
+
+        simCtx.beginPath();
+        simCtx.globalAlpha = 0.115;
+        simCtx.fillStyle = isLeft ? "rgb(255, 160, 70)" : "rgb(75, 205, 255)";
+        simCtx.arc(p.x, p.y, rHalo, 0, Math.PI * 2);
+        simCtx.fill();
+
+        simCtx.beginPath();
+        simCtx.globalAlpha = 0.82;
+        simCtx.fillStyle = isLeft ? "rgb(255, 216, 165)" : "rgb(188, 238, 255)";
+        simCtx.arc(p.x, p.y, rCore, 0, Math.PI * 2);
+        simCtx.fill();
+    }
+
+    simCtx.globalAlpha = 1;
+}
+
+function drawScene() {
+    drawBackgroundGlow();
+    drawBox();
+    drawParticles();
+}
+
+/* =========================================================
+   7. 统计图绘制
+========================================================= */
+
+function mean(arr) {
+    if (arr.length === 0) return 0;
+    let s = 0;
+    for (const v of arr) s += v;
+    return s / arr.length;
+}
+
+function std(arr, mu) {
+    if (arr.length <= 1) return 0;
+    let s = 0;
+    for (const v of arr) {
+        const d = v - mu;
+        s += d * d;
+    }
+    return Math.sqrt(s / (arr.length - 1));
+}
+
+function drawRoundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
+function drawStats() {
+    const rect = statCanvas.getBoundingClientRect();
+    const sw = rect.width;
+    const sh = rect.height;
+
+    statCtx.clearRect(0, 0, sw, sh);
+
+    // 背景
+    statCtx.save();
+    drawRoundRect(statCtx, 0, 0, sw, sh, 16);
+    statCtx.fillStyle = "rgba(4, 7, 12, 0.62)";
+    statCtx.fill();
+    statCtx.restore();
+
+    const padL = 38;
+    const padR = 14;
+    const padT = 30;
+    const padB = 28;
+
+    const x0 = padL;
+    const y0 = sh - padB;
+    const plotW = sw - padL - padR;
+    const plotH = sh - padT - padB;
+
+    // 标题
+    statCtx.fillStyle = "rgba(225,225,225,0.82)";
+    statCtx.font = "12px Arial";
+    statCtx.fillText("Entropy Frequency Distribution", padL, 18);
+
+    // 坐标轴
+    statCtx.strokeStyle = "rgba(200,220,235,0.25)";
+    statCtx.lineWidth = 1;
+    statCtx.beginPath();
+    statCtx.moveTo(x0, padT);
+    statCtx.lineTo(x0, y0);
+    statCtx.lineTo(sw - padR, y0);
+    statCtx.stroke();
+
+    if (history.length < 3) return;
+
+    const mu = mean(history);
+    const sig = std(history, mu);
+    const sampleCount = history.length;
+
+    const bins = Math.min(150, Math.max(30, Math.floor(N / 8)));
+    const binWidth = N / bins;
+    const counts = new Array(bins).fill(0);
+
+    for (const v of history) {
+        let id = Math.floor(v / binWidth);
+        if (id < 0) id = 0;
+        if (id >= bins) id = bins - 1;
+        counts[id]++;
+    }
+
+    let maxY = 1;
+    for (const c of counts) {
+        if (c > maxY) maxY = c;
+    }
+
+    // 加入拟合线最大值估计
+    if (sig > 0.01) {
+        const peak = (1 / (sig * Math.sqrt(2 * Math.PI))) * sampleCount * binWidth;
+        maxY = Math.max(maxY, peak);
+    }
+
+    maxY *= 1.22;
+
+    // 柱状图
+    for (let i = 0; i < bins; i++) {
+        const c = counts[i];
+        const bx = x0 + (i / bins) * plotW;
+        const bw = Math.max(1, plotW / bins - 1);
+        const bh = c / maxY * plotH;
+        const by = y0 - bh;
+
+        statCtx.fillStyle = "rgba(106, 174, 220, 0.62)";
+        statCtx.fillRect(bx, by, bw, bh);
+    }
+
+    // 高斯拟合线
+    if (sig > 0.01) {
+        statCtx.strokeStyle = "rgba(255, 220, 165, 0.95)";
+        statCtx.lineWidth = 2;
+        statCtx.beginPath();
+
+        for (let i = 0; i <= 260; i++) {
+            const xVal = N * i / 260;
+            const pdf = (1 / (sig * Math.sqrt(2 * Math.PI))) *
+                Math.exp(-0.5 * Math.pow((xVal - mu) / sig, 2));
+            const yVal = pdf * sampleCount * binWidth;
+
+            const px = x0 + xVal / N * plotW;
+            const py = y0 - yVal / maxY * plotH;
+
+            if (i === 0) statCtx.moveTo(px, py);
+            else statCtx.lineTo(px, py);
+        }
+
+        statCtx.stroke();
+    }
+
+    // 坐标刻度
+    statCtx.fillStyle = "rgba(220,220,220,0.62)";
+    statCtx.font = "10px Arial";
+    statCtx.textAlign = "center";
+    statCtx.fillText("0", x0, sh - 9);
+    statCtx.fillText(String(Math.round(N / 2)), x0 + plotW / 2, sh - 9);
+    statCtx.fillText(String(N), x0 + plotW, sh - 9);
+
+    statCtx.textAlign = "right";
+    statCtx.fillText(String(Math.round(maxY)), x0 - 5, padT + 4);
+    statCtx.fillText("0", x0 - 5, y0 + 3);
+
+    // 当前信息
+    statCtx.textAlign = "left";
+    statCtx.fillStyle = "rgba(220,220,220,0.78)";
+    statCtx.font = "11px Arial";
+    statCtx.fillText("Cur: " + currentLeft, x0 + plotW * 0.58, padT + 16);
+    statCtx.fillText("μ: " + mu.toFixed(1), x0 + plotW * 0.58, padT + 31);
+    statCtx.fillText("σ: " + sig.toFixed(1), x0 + plotW * 0.58, padT + 46);
+}
+
+/* =========================================================
+   8. 主循环
+========================================================= */
+
+function loop(now) {
+    const delta = now - lastTime;
+    lastTime = now;
+
+    const fps = 1000 / Math.max(delta, 1);
+    fpsSmooth = fpsSmooth * 0.92 + fps * 0.08;
+
+    if (running) {
+        // 每帧多走几步，让混合过程更明显
+        const subSteps = W < 720 ? 2 : 3;
+        for (let i = 0; i < subSteps; i++) {
+            updatePhysics();
+        }
+    }
+
+    drawScene();
+    drawStats();
+
+    if (stepCount % 5 === 0) {
+        const mu = history.length ? mean(history) : 0;
+        const sig = history.length > 2 ? std(history, mu) : 0;
+
+        liveText.innerHTML =
+            "Left Count: " + currentLeft + " / " + N +
+            "<br>Mean μ: " + mu.toFixed(1) +
+            " &nbsp; Std σ: " + sig.toFixed(1);
+
+        fpsText.textContent = "FPS " + fpsSmooth.toFixed(0);
+    }
+
+    requestAnimationFrame(loop);
+}
+
+/* =========================================================
+   9. 交互按钮
+========================================================= */
+
+startBtn.addEventListener("click", function() {
+    running = !running;
+});
+
+resetBtn.addEventListener("click", function() {
+    initSimulation();
+});
+
+fullBtn.addEventListener("click", function() {
+    const el = document.documentElement;
+    if (!document.fullscreenElement) {
+        if (el.requestFullscreen) el.requestFullscreen();
+    } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+    }
+});
+
+[NInput, speedInput, dtInput, cubeInput, historyInput].forEach(function(input) {
+    input.addEventListener("change", function() {
+        initSimulation();
+    });
+});
+
+/* =========================================================
+   10. 启动
+========================================================= */
+
+resizeCanvas();
+initSimulation();
+requestAnimationFrame(loop);
+</script>
+
+</body>
+</html>
